@@ -2,7 +2,14 @@
 
 d = { 'settings': { 'branch': 'main',
                 'doc_baseurl': '/indic-clip',
-                'doc_host': 'https://numb3r33.github.io',
-                'git_url': 'https://github.com/numb3r33/indic-clip',
+                'doc_host': 'https://numb3r33\n'
+                            '\n'
+                            'requirements = fastai==2.7.12 transformers timm requests beautifulsoup4 imagehash sentencepiece '
+                            'gradio.github.io',
+                'git_url': 'https://github.com/numb3r33\n'
+                           '\n'
+                           'requirements = fastai==2.7.12 transformers timm requests beautifulsoup4 imagehash sentencepiece '
+                           'gradio/indic-clip',
                 'lib_path': 'indic_clip'},
-  'syms': {'indic_clip.core': {'indic_clip.core.foo': ('core.html#foo', 'indic_clip/core.py')}}}
+  'syms': { 'indic_clip.core': { 'indic_clip.core.get_logger': ('core.html#get_logger', 'indic_clip/core.py'),
+                                 'indic_clip.core.setup_logging': ('core.html#setup_logging', 'indic_clip/core.py')}}}
