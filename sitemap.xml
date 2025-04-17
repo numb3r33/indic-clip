@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://numb3r33
+requirements = fastai==2.7.12 transformers timm requests beautifulsoup4 imagehash sentencepiece gradio.github.io/indic-clip/index.html</loc>
+    <lastmod>2025-04-17T12:39:33.843Z</lastmod>
+  </url>
+  <url>
+    <loc>https://numb3r33
+requirements = fastai==2.7.12 transformers timm requests beautifulsoup4 imagehash sentencepiece gradio.github.io/indic-clip/core.html</loc>
+    <lastmod>2025-04-17T12:39:33.857Z</lastmod>
+  </url>
+</urlset>

@@ -1,0 +1,2 @@
+Sitemap: https://numb3r33
+requirements = fastai==2.7.12 transformers timm requests beautifulsoup4 imagehash sentencepiece gradio.github.io/indic-clip/sitemap.xml

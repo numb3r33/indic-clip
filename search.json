@@ -1,0 +1,72 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Indic-CLIP",
+    "section": "",
+    "text": "This file serves as the README and the index for the project documentation.",
+    "crumbs": [
+      "Indic-CLIP"
+    ]
+  },
+  {
+    "objectID": "index.html#project-goal",
+    "href": "index.html#project-goal",
+    "title": "Indic-CLIP",
+    "section": "Project Goal",
+    "text": "Project Goal\nThis project aims to adapt the CLIP (Contrastive Language-Image Pre-training) architecture for Indic languages, specifically Sanskrit and Hindi, using the fast.ai framework. Building upon the approach of Chinese-CLIP, we’ll develop models that understand the relationship between images and text in Indic languages. The model will focus on religious content and e-commerce domains.",
+    "crumbs": [
+      "Indic-CLIP"
+    ]
+  },
+  {
+    "objectID": "index.html#developer-guide",
+    "href": "index.html#developer-guide",
+    "title": "Indic-CLIP",
+    "section": "Developer Guide",
+    "text": "Developer Guide\nThis project uses nbdev for development, which allows creating Python libraries from Jupyter notebooks.\n\nSetup Development Environment\n\nClone the repository: sh     git clone https://github.com/numb3r33/indic-clip.git # Replace with your repo URL if different     cd indic-clip\nInstall dependencies: It’s recommended to use a virtual environment (e.g., conda or venv).\n    # Using pip and venv\n    python -m venv venv\n    source venv/bin/activate # On Windows use `venv\\Scripts\\activate`\npip install -r requirements.txt\n\n# Or using conda\n# conda create -n indic-clip python=3.9\n# conda activate indic-clip\n# pip install -r requirements.txt # Often easier than managing all via conda channels\nInstall the library in editable mode: This links the installed package to your source code, so changes in notebooks are reflected after running nbdev_prepare. sh     pip install -e .\n(Optional) Install Git hooks for nbdev: This helps keep notebooks clean and synchronized. sh     nbdev_install_hooks\n\n\n\nDevelopment Workflow\n\nMake changes in the Jupyter notebooks under the nbs/ directory.\nExport changes from notebooks to the Python library (indic_clip/): sh     nbdev_export\nPrepare the project (cleans notebooks, runs tests, builds docs): sh     nbdev_prepare\nCommit your changes to Git.",
+    "crumbs": [
+      "Indic-CLIP"
+    ]
+  },
+  {
+    "objectID": "index.html#usage-placeholder",
+    "href": "index.html#usage-placeholder",
+    "title": "Indic-CLIP",
+    "section": "Usage (Placeholder)",
+    "text": "Usage (Placeholder)\nDetails on how to use the trained models and the library API will be added here once implemented.\n\n# Example placeholder (can be removed)\n1+1\n\n2",
+    "crumbs": [
+      "Indic-CLIP"
+    ]
+  },
+  {
+    "objectID": "core.html",
+    "href": "core.html",
+    "title": "Core Utilities",
+    "section": "",
+    "text": "# Install necessary libraries\n# Note: nbdev install might be needed if running nbdev commands\n!pip install -q nbdev\n\n     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 44.3/44.3 kB 1.8 MB/s eta 0:00:00\n   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 70.1/70.1 kB 2.8 MB/s eta 0:00:00\n   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.1/78.1 kB 4.9 MB/s eta 0:00:00\n   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 62.4/62.4 kB 3.9 MB/s eta 0:00:00\n   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 79.1/79.1 kB 5.3 MB/s eta 0:00:00\n   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 24.8 MB/s eta 0:00:00\nERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.\nfastai 2.7.19 requires fastcore&lt;1.8,&gt;=1.5.29, but you have fastcore 1.8.1 which is incompatible.",
+    "crumbs": [
+      "Core Utilities"
+    ]
+  },
+  {
+    "objectID": "core.html#utility-functions",
+    "href": "core.html#utility-functions",
+    "title": "Core Utilities",
+    "section": "Utility Functions",
+    "text": "Utility Functions\n\nsource\n\nensure_dir\n\n ensure_dir (path:pathlib.Path)\n\nEnsure a directory exists, creating it if necessary.\n\nsource\n\n\nget_logger\n\n get_logger (name)\n\nReturns a logger instance.\n\nsource\n\n\nsetup_logging\n\n setup_logging (level=20)\n\nConfigures basic logging for the project.",
+    "crumbs": [
+      "Core Utilities"
+    ]
+  },
+  {
+    "objectID": "core.html#constants",
+    "href": "core.html#constants",
+    "title": "Core Utilities",
+    "section": "Constants",
+    "text": "Constants",
+    "crumbs": [
+      "Core Utilities"
+    ]
+  }
+]
