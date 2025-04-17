@@ -1,0 +1,9 @@
+project:
+  output-dir: _docs
+
+website:
+  title: "indic-clip"
+  site-url: "https://numb3r33.github.io/indic-clip"
+  description: "Train a Clip model for indic languages"
+  repo-branch: main
+  repo-url: "https://github.com/numb3r33/indic-clip"
