@@ -1,0 +1,38 @@
+# Core ML/Data Libraries
+fastai
+transformers
+timm
+
+# Data Handling & Processing
+Pillow>=9.0.0 # Image processing
+imagehash>=4.2.0 # For image deduplication
+lmdb # Optional, if used for large datasets
+
+# Indic NLP
+indic-nlp-library==0.92 # Or specific version as needed
+
+# Tokenization
+sentencepiece>=0.1.95 # For BPE tokenizer
+
+# Development & Experiment Tracking
+nbdev>=2.3.0
+wandb>=0.12.0 # Experiment tracking
+ipywidgets # Often needed for notebook interactivity
+
+# Deployment & Demo
+gradio>=3.0.0 # For Hugging Face Spaces demo
+accelerate>=0.12.0 # For efficient training (mixed precision, distributed)
+bitsandbytes # For 8-bit optimizers, quantization (optional)
+
+# Utilities
+tqdm # Progress bars
+python-dotenv # For managing environment variables (e.g., API keys)
+mock # For testing (often needed by other libs)
+
+# Specific to Data Collection (Example)
+kaggle # If using Kaggle API directly
+zipfile36 # Older zipfile handling if needed
+
+# Optional Evaluation/Text Metrics
+Levenshtein # String distance metrics
+sacremoses # Text processing/tokenization for some benchmarks

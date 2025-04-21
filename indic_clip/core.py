@@ -42,19 +42,19 @@ def ensure_dir(path: Path):
 IN_COLAB = 'google.colab' in sys.modules
 
 if IN_COLAB:
-    # Assume project is cloned into /content/indic-clip or Drive is mounted
-    # If using Drive, adjust this path accordingly e.g., Path('/content/drive/MyDrive/indic-clip')
+    # Assume project is cloned into /content/Indic-Clip or Drive is mounted
+    # If using Drive, adjust this path accordingly e.g., Path('/content/drive/MyDrive/Indic-Clip')
     # Check if Google Drive is mounted
     from google.colab import drive
     drive.mount('/content/drive')
 
     if Path('/content/drive/MyDrive').exists():
-       DEFAULT_ROOT = Path('/content/drive/MyDrive/indic-clip')
-       print("Google Drive detected, setting PROJECT_ROOT to /content/drive/MyDrive/indic-clip")
+       DEFAULT_ROOT = Path('/content/drive/MyDrive/Indic-Clip')
+       print("Google Drive detected, setting PROJECT_ROOT to /content/drive/MyDrive/Indic-Clip")
        print("Ensure your project files are located there.")
     else:
-       DEFAULT_ROOT = Path('/content/indic-clip')
-       print("Google Drive not detected. Setting PROJECT_ROOT to /content/indic-clip")
+       DEFAULT_ROOT = Path('/content/Indic-Clip')
+       print("Google Drive not detected. Setting PROJECT_ROOT to /content/Indic-Clip")
        print("Ensure your project files are located there (e.g., via !git clone).")
 else:
     # Default for local execution: use env var or parent of current dir
