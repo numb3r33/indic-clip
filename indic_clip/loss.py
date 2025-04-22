@@ -84,6 +84,7 @@ class AllGather(torch.autograd.Function):
             # If not distributed, just return the gradient
             return grad_output
 
+        logger.warning("!!! AllGather DEBUG: Returning SLICE of grad_output in backward pass !!!")
         # Ensure grad_output is contiguous
         grad_output = grad_output.contiguous()
         world_size = dist.get_world_size()
@@ -106,97 +107,89 @@ class AllGather(torch.autograd.Function):
         return grad_input
 
 # %% ../nbs/08_loss.ipynb 12
-class ContrastiveLoss(Module):
+class ContrastiveLoss(Module): # Inherit from fastai's Module or nn.Module
     """Calculates the contrastive loss (InfoNCE) between image and text features.
-
     Handles distributed training by gathering features across GPUs before calculating loss.
-    Assumes input features (image_features, text_features) are already L2 normalized.
+    Designed to be used directly as Learner's loss_func.
     """
-    def __init__(self, *args, axis:int = -1, **kwargs):
-        """
-        Args:
-            args: Arguments passed to the parent BaseLoss.
-            axis (int): The axis to perform the reduction over (passed to BaseLoss).
-            kwargs: Keyword arguments passed to the parent BaseLoss.
-        """
-        self.all_gather = AllGather.apply # Use the custom autograd function
+    def __init__(self):
+        self.all_gather = AllGather.apply
 
-    def forward(self, preds: tuple[torch.Tensor, torch.Tensor, torch.Tensor]) -> torch.Tensor:
-
-        """
-        Calculates the contrastive loss.
-
-        Args:
-            preds (tuple): A tuple containing:
-                - image_features (torch.Tensor): Normalized image features (B, D).
-                - text_features (torch.Tensor): Normalized text features (B, D).
-                - logit_scale (torch.Tensor): The learnable logit scaling factor (scalar tensor).
-
-        Returns:
-            torch.Tensor: The calculated contrastive loss (scalar tensor).
-        """
-        # logger.info(">>> ContrastiveLoss.forward ENTERED")
+    # *** IMPORTANT: Match fastai loss signature ***
+    def forward(self, preds: tuple[torch.Tensor, torch.Tensor, torch.Tensor], *target) -> torch.Tensor:
+        # preds is the output from the model: (image_features, text_features, logit_scale)
+        # target is the dummy category batch, which we ignore here.
+        # logger.critical("LOSS FORWARD CALLED") # Use critical for visibility
 
         image_features, text_features, logit_scale = preds
+        device = image_features.device # Get the device from one of the inputs
 
-        if torch.isnan(image_features).any() or torch.isinf(image_features).any():
-            logger.error("!!! NaN/Inf DETECTED IN INPUT image_features !!!")
-        if torch.isnan(text_features).any() or torch.isinf(text_features).any():
-            logger.error("!!! NaN/Inf DETECTED IN INPUT text_features !!!")
-        if torch.isnan(logit_scale).any() or torch.isinf(logit_scale).any():
-            logger.error(f"!!! NaN/Inf DETECTED IN INPUT logit_scale: {logit_scale.item()} !!!")
+        # --- Check features JUST BEFORE gathering/similarity calculation ---
+        if torch.isnan(image_features).any():
+            logger.error("!!! NaN DETECTED IN image_features JUST BEFORE ContrastiveLoss similarity calc !!!")
+            return torch.tensor(torch.nan, device=device, requires_grad=True)
+        if torch.isnan(text_features).any():
+            logger.error("!!! NaN DETECTED IN text_features JUST BEFORE ContrastiveLoss similarity calc !!!")
+            return torch.tensor(torch.nan, device=device, requires_grad=True)
+        if torch.isnan(logit_scale):
+            logger.error(f"!!! NaN DETECTED IN logit_scale JUST BEFORE ContrastiveLoss similarity calc: {logit_scale.item()} !!!")
+            return torch.tensor(torch.nan, device=device, requires_grad=True)
 
-        # logger.info(f"Input shapes: Img={image_features.shape}, Txt={text_features.shape}, Scale={logit_scale.shape}")
-        # logger.info(f"Input norms (mean): Img={image_features.norm(dim=-1).mean().item():.4f}, Txt={text_features.norm(dim=-1).mean().item():.4f}")
-        # logger.info(f"Logit Scale value: {logit_scale.item():.4f}")
+        # --- Check norms AGAIN here (should be ~1.0) ---
+        img_norms = image_features.norm(p=2, dim=-1)
+        txt_norms = text_features.norm(p=2, dim=-1)
+        if img_norms.min() < 0.9 or img_norms.max() > 1.1:
+            logger.warning(f"Image feature norms deviate significantly from 1.0: min={img_norms.min().item()}, max={img_norms.max().item()}")
+        if txt_norms.min() < 0.9 or txt_norms.max() > 1.1:
+            logger.warning(f"Text feature norms deviate significantly from 1.0: min={txt_norms.min().item()}, max={txt_norms.max().item()}")
 
-        # --- Gather Features in Distributed Setting ---
+        # --- Gather Features Across GPUs (if applicable) ---
         if dist.is_available() and dist.is_initialized():
+            logger.debug("Gathering features across GPUs.")
             gathered_image_features = self.all_gather(image_features)
             gathered_text_features = self.all_gather(text_features)
-            world_size = dist.get_world_size()
+            # Logit scale is usually not gathered, assuming it's the same across devices
+            # or handled differently (e.g., only rank 0 updates it).
         else:
+            logger.debug("Not a distributed setup. Using local features.")
             gathered_image_features = image_features
             gathered_text_features = text_features
-            world_size = 1
+        # ---------------------------------------------------
 
-        # --- Calculate Similarity Scores ---
-        # Note: logit_scale is applied *before* softmax in cross_entropy
-        # We use the raw logit_scale parameter and apply exp() inside the loss calculation if needed,
-        # or directly multiply as CLIP does.
-        # The forward pass of IndicCLIP already returns exp(logit_scale).
-        # Here, we assume logit_scale passed in is already exponentiated.
-
-        # Cosine similarity as dot product of normalized features
-        # logits_per_image: How well each image matches each text [Global B, Global B]
+        # --- Calculate Similarity ---
+        # Note: logit_scale is used directly (already exponentiated by the model)
         logits_per_image = logit_scale * gathered_image_features @ gathered_text_features.t()
-        # logits_per_text: How well each text matches each image [Global B, Global B]
-        logits_per_text = logits_per_image.t() # More efficient than recalculating
+        # --- Check Logits Immediately ---
+        if torch.isnan(logits_per_image).any() or torch.isinf(logits_per_image).any():
+            logger.error("!!! NaN/Inf detected in logits_per_image AFTER similarity calculation !!!")
+            logger.error(f"Logit Scale was: {logit_scale.item():.4f}")
+            logger.error(f"Gathered Img Feat Stats: mean={gathered_image_features.mean().item()}, std={gathered_image_features.std().item()}, min={gathered_image_features.min().item()}, max={gathered_image_features.max().item()}")
+            logger.error(f"Gathered Txt Feat Stats: mean={gathered_text_features.mean().item()}, std={gathered_text_features.std().item()}, min={gathered_text_features.min().item()}, max={gathered_text_features.max().item()}")
+            return torch.tensor(torch.nan, device=device, requires_grad=True) # Return NaN
+
+        logits_per_text = logits_per_image.t() # Efficient transpose
+
+        # --- Create Labels ---
+        # Ground truth is the identity matrix diagonal (image i matches text i)
+        # The size should match the batch size *after* gathering
+        gathered_batch_size = gathered_image_features.shape[0]
+        labels = torch.arange(gathered_batch_size, device=device, dtype=torch.long)
+        # ---------------------
 
         # --- Calculate Loss ---
-        # Create ground truth labels. The diagonal elements (i,i) correspond to matching pairs.
-        local_batch_size = image_features.size(0)
-        global_batch_size = gathered_image_features.size(0)
-
-        # Ensure calculation happens on the correct device
-        device = image_features.device
-        labels = torch.arange(global_batch_size, device=device, dtype=torch.long)
-
-        if torch.isnan(logits_per_image).any() or torch.isinf(logits_per_image).any():
-          logger.warning("NaN/Inf detected in logits_per_image!")
-          # Optionally print min/max/mean
-          logger.warning(f"Logit Scale (exp): {logit_scale.item()}")
-          logger.warning(f"Image Features Norm: {gathered_image_features.norm(dim=-1).mean().item()}")
-          logger.warning(f"Text Features Norm: {gathered_text_features.norm(dim=-1).mean().item()}")
-
-
-        # Calculate cross-entropy loss for both directions
         loss_img = F.cross_entropy(logits_per_image, labels)
         loss_txt = F.cross_entropy(logits_per_text, labels)
 
-        # Average the two losses
+        # --- Check component losses ---
+        if torch.isnan(loss_img): logger.error(f"!!! loss_img is NaN !!! Input logits max: {logits_per_image.max().item()}")
+        if torch.isnan(loss_txt): logger.error(f"!!! loss_txt is NaN !!! Input logits max: {logits_per_text.max().item()}")
+
         total_loss = (loss_img + loss_txt) / 2
 
-        # logger.info(f"loss_img: {loss_img}, loss_txt: {loss_txt}, total loss: {total_loss}")
+        # --- Final NaN check ---
+        if torch.isnan(total_loss):
+            logger.error(f"!!! total_loss is NaN !!! loss_img={loss_img.item()}, loss_txt={loss_txt.item()}")
+            return torch.tensor(torch.nan, device=device, requires_grad=True) # Return NaN if components were NaN
 
+        # logger.info(f"Returning total_loss: value={total_loss.item()}, shape={total_loss.shape}, dtype={total_loss.dtype}, device={total_loss.device}, requires_grad={total_loss.requires_grad}")
         return total_loss

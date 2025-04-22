@@ -5,7 +5,8 @@
 # %% auto 0
 __all__ = ['logger', 'VisionEncoder']
 
-# %% ../../nbs/05_model_vision.ipynb 4
+# %% ../../nbs/05_model_vision.ipynb 2
+from pathlib import Path
 try:
     import indic_clip.core
     print("Reloaded indic_clip.core")
@@ -27,8 +28,21 @@ except ModuleNotFoundError:
             print("ERROR: Still cannot find indic_clip.core. Ensure project structure is correct.")
             print("Expected: /content/Indic-Clip/indic_clip/core.py or similar in Drive")
             # raise # Stop execution if core components missing
+    else:
+        project_parent = '/workspace'
+        if Path('/workspace/indic-clip').exists():
+             project_parent = '/workspace/indic-clip'
+        if project_parent not in sys.path:
+             sys.path.insert(0, project_parent)
+             print(f"Added {project_parent} to sys.path")
+        try:
+            import indic_clip.core
+            print("Imported indic_clip.core after path adjustment.")
+        except ModuleNotFoundError:
+            print("ERROR: Still cannot find indic_clip.core. Ensure project structure is correct.")
+            print("Expected: /workspace/indic-clip/indic-clip/core.py or similar in Drive")
 
-# %% ../../nbs/05_model_vision.ipynb 8
+# %% ../../nbs/05_model_vision.ipynb 4
 import torch
 import torch.nn as nn
 import timm
@@ -48,7 +62,7 @@ except ModuleNotFoundError:
 setup_logging()
 logger = get_logger(__name__)
 
-# %% ../../nbs/05_model_vision.ipynb 10
+# %% ../../nbs/05_model_vision.ipynb 6
 class VisionEncoder(Module):
     """A wrapper for `timm` vision models to extract features.
 

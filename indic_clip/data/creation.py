@@ -4,7 +4,8 @@
 __all__ = ['PROCESSED_FILTERED_DATA_PATH', 'MAX_SEQ_LEN', 'IMAGE_SIZE', 'BATCH_SIZE', 'get_indic_clip_items', 'ImageGetter',
            'CaptionGetter', 'DomainGetter', 'LanguageGetter', 'HFTextTransform', 'IndicCLIPDataBlock']
 
-# %% ../../nbs/04_data_creation.ipynb 2
+# %% ../../nbs/04_data_creation.ipynb 1
+from pathlib import Path
 try:
     import indic_clip.core
     print("Reloaded indic_clip.core")
@@ -26,8 +27,21 @@ except ModuleNotFoundError:
             print("ERROR: Still cannot find indic_clip.core. Ensure project structure is correct.")
             print("Expected: /content/Indic-Clip/indic_clip/core.py or similar in Drive")
             # raise # Stop execution if core components missing
+    else:
+        project_parent = '/workspace'
+        if Path('/workspace/indic-clip').exists():
+             project_parent = '/workspace/indic-clip'
+        if project_parent not in sys.path:
+             sys.path.insert(0, project_parent)
+             print(f"Added {project_parent} to sys.path")
+        try:
+            import indic_clip.core
+            print("Imported indic_clip.core after path adjustment.")
+        except ModuleNotFoundError:
+            print("ERROR: Still cannot find indic_clip.core. Ensure project structure is correct.")
+            print("Expected: /workspace/indic-clip/indic-clip/core.py or similar in Drive")
 
-# %% ../../nbs/04_data_creation.ipynb 5
+# %% ../../nbs/04_data_creation.ipynb 2
 # --- Standard Library Imports ---
 import os
 import json
@@ -52,7 +66,7 @@ MAX_SEQ_LEN = 128
 IMAGE_SIZE  = 256
 BATCH_SIZE = DEFAULT_BATCH_SIZE
 
-# %% ../../nbs/04_data_creation.ipynb 6
+# %% ../../nbs/04_data_creation.ipynb 3
 @patch
 def summary(dblock:DataBlock):
     "Prints a summary of the DataBlock showing blocks, getters, and transforms."
@@ -63,7 +77,7 @@ def summary(dblock:DataBlock):
     print(f"  Batch Transforms: {dblock.batch_tfms}")
     print(f"  Splitter: {dblock.splitter}")
 
-# %% ../../nbs/04_data_creation.ipynb 7
+# %% ../../nbs/04_data_creation.ipynb 4
 def get_indic_clip_items(data_path: Path = PROCESSED_FILTERED_DATA_PATH):
     """
     Loads image-caption pairs from a processed JSONL file.
@@ -99,7 +113,7 @@ def get_indic_clip_items(data_path: Path = PROCESSED_FILTERED_DATA_PATH):
     # print("Columns:", df.columns)
     return df
 
-# %% ../../nbs/04_data_creation.ipynb 8
+# %% ../../nbs/04_data_creation.ipynb 5
 def ImageGetter(row):
     """
     Constructs the full path to an image file based on the 'source'
@@ -165,7 +179,7 @@ def LanguageGetter(row):
     """ Placeholder for extracting language label """
     return row.get('language', 'un') # Default if not present
 
-# %% ../../nbs/04_data_creation.ipynb 9
+# %% ../../nbs/04_data_creation.ipynb 6
 class HFTextTransform(Transform):
     "Tokenize strings into a (ids,mask) tuple of Tensors."
     def __init__(self, hf_tokenizer):
@@ -182,7 +196,7 @@ class HFTextTransform(Transform):
         ids, _ = o
         return self.hf.decode(ids.tolist(), skip_special_tokens=True)
 
-# %% ../../nbs/04_data_creation.ipynb 10
+# %% ../../nbs/04_data_creation.ipynb 7
 class IndicCLIPDataBlock(DataBlock):
     """
     A fast.ai DataBlock specifically designed for Indic-CLIP.
@@ -250,12 +264,12 @@ class IndicCLIPDataBlock(DataBlock):
         # For contrastive learning, y is usually not needed directly from the dataloader
         # The pairing is implicit in the batch (image i corresponds to text i)
         super().__init__(
-            blocks=(ImageBlock, text_block), # ImageBlock output: Tensor; text_block output: (Tensor, Tensor)
+            blocks=(ImageBlock, text_block, CategoryBlock), # ImageBlock output: Tensor; text_block output: (Tensor, Tensor)
             n_inp=2,                          # Tell DataBlock the first 2 blocks are inputs
             # get_items=get_indic_clip_items,   # Function to get the source data (e.g., dataframe)
             get_x=[ImageGetter,             # Function to get the image path from item
                    CaptionGetter],          # Function to get the caption string from item
-            # No get_y needed for self-supervised contrastive learning
+            get_y=lambda r: 0, # Provide a dummy target for every item
             splitter=RandomSplitter(valid_pct=valid_pct, seed=seed),
             item_tfms=Resize(self.img_size),  # Transform applied to individual items
             batch_tfms=batch_tfms_list,       # Transform applied to batches

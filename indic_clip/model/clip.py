@@ -151,69 +151,147 @@ class IndicCLIP(Module):
         logger.info(f"IndicCLIP initialized with vision='{vision_model_name}', text='{text_model_name}', embed_dim={embed_dim}")
 
     def encode_image(self, image: torch.Tensor) -> torch.Tensor:
-        """Encodes an image into the shared embedding space.
-
-        Args:
-            image (torch.Tensor): Input image tensor (B, C, H, W).
-
-        Returns:
-            torch.Tensor: Image features projected into the embedding space (B, embed_dim), L2-normalized.
-        """
-        image_features = self.vision_encoder(image)
-        projected_features = self.visual_projection(image_features)
+        # Check input image tensor (optional, but good practice)
+        if torch.isnan(image).any() or torch.isinf(image).any():
+            logger.error("!!! NaN/Inf detected in input image tensor to encode_image !!!")
+            # Handle error - maybe return zeros? This depends on how you want to proceed.
+            # Returning zeros might hide the problem later. Raising an error might be better.
+            raise ValueError("NaN/Inf in input image tensor")
+    
+        image_features_raw = self.vision_encoder(image)
+    
+        # --- Check RAW features ---
+        if torch.isnan(image_features_raw).any() or torch.isinf(image_features_raw).any():
+            logger.error("!!! NaN/Inf detected in RAW image features from vision_encoder !!!")
+            raise ValueError("NaN/Inf in raw image features") # Halt execution
+    
+        projected_features = self.visual_projection(image_features_raw)
+    
+        # --- Check PROJECTED features ---
+        if torch.isnan(projected_features).any() or torch.isinf(projected_features).any():
+            logger.error("!!! NaN/Inf detected in PROJECTED image features !!!")
+            raise ValueError("NaN/Inf in projected image features") # Halt execution
+    
+        # --- Check NORM before normalization ---
+        norms = projected_features.norm(p=2, dim=-1, keepdim=True)
+        min_norm = norms.min().item()
+        if min_norm < 1e-6: # Check for near-zero norms
+            logger.warning(f"!!! Very small norm detected in projected image features before normalization: {min_norm} !!!")
+            # Optionally: Find which item in the batch has the small norm
+            problem_indices = torch.where(norms.squeeze() < 1e-6)[0]
+            logger.warning(f"Problematic image batch indices: {problem_indices.tolist()}")
+    
         # Normalize features
         normalized_features = F.normalize(projected_features, p=2, dim=-1)
+    
+        # --- Check FINAL normalized features ---
+        if torch.isnan(normalized_features).any() or torch.isinf(normalized_features).any():
+            logger.error(f"!!! NaN/Inf detected in FINAL NORMALIZED image features (min_norm was {min_norm}) !!!")
+            raise ValueError("NaN/Inf in final normalized image features") # Halt execution
+
         return normalized_features
 
     def encode_text(self, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
-        """Encodes text into the shared embedding space.
-
-        Args:
-            input_ids (torch.Tensor): Input token IDs (B, SeqLen).
-            attention_mask (torch.Tensor): Attention mask (B, SeqLen).
-
-        Returns:
-            torch.Tensor: Text features projected into the embedding space (B, embed_dim), L2-normalized.
-        """
-        text_features = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask)
-        projected_features = self.text_projection(text_features)
+        # Check input IDs/mask (optional)
+        # ...
+    
+        text_features_raw = self.text_encoder(input_ids=input_ids, attention_mask=attention_mask)
+    
+        # --- Check RAW features ---
+        if torch.isnan(text_features_raw).any() or torch.isinf(text_features_raw).any():
+            logger.error("!!! NaN/Inf detected in RAW text features from text_encoder !!!")
+            # Log input_ids that caused the issue if possible
+            problem_input_ids = input_ids[torch.where(torch.isnan(text_features_raw).any(dim=1))[0]]
+            logger.error(f"Problematic input_ids (sample): {problem_input_ids[:2]}")
+            raise ValueError("NaN/Inf in raw text features")
+    
+        projected_features = self.text_projection(text_features_raw)
+    
+        # --- Check PROJECTED features ---
+        if torch.isnan(projected_features).any() or torch.isinf(projected_features).any():
+            logger.error("!!! NaN/Inf detected in PROJECTED text features !!!")
+            raise ValueError("NaN/Inf in projected text features")
+    
+        # --- Check NORM before normalization ---
+        norms = projected_features.norm(p=2, dim=-1, keepdim=True)
+        min_norm = norms.min().item()
+        if min_norm < 1e-6:
+            logger.warning(f"!!! Very small norm detected in projected text features before normalization: {min_norm} !!!")
+            problem_indices = torch.where(norms.squeeze() < 1e-6)[0]
+            logger.warning(f"Problematic text batch indices: {problem_indices.tolist()}")
+            # Optionally log the text corresponding to these indices if you have access to the original text batch
+            # logger.warning(f"Problematic input_ids for low norm: {input_ids[problem_indices]}")
+    
+    
         # Normalize features
         normalized_features = F.normalize(projected_features, p=2, dim=-1)
+    
+        # --- Check FINAL normalized features ---
+        if torch.isnan(normalized_features).any() or torch.isinf(normalized_features).any():
+            logger.error(f"!!! NaN/Inf detected in FINAL NORMALIZED text features (min_norm was {min_norm}) !!!")
+            raise ValueError("NaN/Inf in final normalized text features")
+    
         return normalized_features
 
     def forward(self, image: torch.Tensor,
-                text_input: tuple) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Forward pass for training. Encodes both image and text.
-        Accepts image tensor and text tensor tuple separately from Learner unpacking xb.
+            text_input: tuple) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        # ... (unpack text_input) ...
 
-        Args:
-            image (torch.Tensor): Input image tensor (B, C, H, W).
-            text_input (tuple): A tuple containing:
-                - input_ids (torch.Tensor): Input token IDs (B, SeqLen).
-                - attention_mask (torch.Tensor): Attention mask (B, SeqLen).
+        if isinstance(text_input, tuple) and len(text_input) == 2:
+            logger.debug(f"Input text tuple shapes: ids={text_input[0].shape}, mask={text_input[1].shape}")
+            logger.debug(f"Input text tuple dtypes: ids={text_input[0].dtype}, mask={text_input[1].dtype}")
+            logger.debug(f"Input text tuple device: ids={text_input[0].device}, mask={text_input[1].device}")
+        else:
+            logger.error(f"MODEL FORWARD RECEIVED UNEXPECTED text_input type: {type(text_input)}")
+            # Handle error - maybe raise? Returning dummy tensors can hide problems.
+            raise TypeError("IndicCLIP forward expected a tuple for text_input")
 
-        Returns:
-            tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-                - image_features: Normalized image features (B, embed_dim).
-                - text_features: Normalized text features (B, embed_dim).
-                - logit_scale: The learned logit scaling factor (scalar tensor, exponentiated).
-        """
-        input_ids, attention_mask = text_input # Unpack the text tuple received as the second argument
-
-        image_features = self.encode_image(image)
-        # Pass the unpacked tensors to encode_text
-        text_features = self.encode_text(input_ids, attention_mask)
-
+        
+        input_ids, attention_mask = text_input
+    
+        # --- Check logit_scale BEFORE encoding (should be stable here) ---
+        current_logit_scale_val = self.logit_scale.data.item()
+        if np.isnan(current_logit_scale_val) or np.isinf(current_logit_scale_val):
+            logger.error(f"!!! Logit scale is NaN/Inf BEFORE encoding: {current_logit_scale_val} !!!")
+            raise ValueError("Logit scale NaN/Inf before encoding")
+    
+        image_features = self.encode_image(image) # Will raise error if NaN occurs inside
+        text_features = self.encode_text(input_ids, attention_mask) # Will raise error if NaN occurs inside
+    
         # Clamp the logit scale parameter before exponentiating
         # Clamp log(1/T) to avoid T becoming too small (e.g., T > 0.01 -> log(1/T) < log(100))
-        self.logit_scale.data.clamp_(max=np.log(1 / 0.01)) # Max log value ~4.605
-
+        # Use a slightly stricter clamp? Maybe max=4.0 (exp(4) ~ 55)
+        self.logit_scale.data.clamp_(min=-np.inf, max=np.log(1 / 0.01)) # max=4.605
+        # Optional: Add a min clamp if worried about excessively large T? e.g., min=np.log(1/100) = -4.605
+    
+        logit_scale_val_after_clamp = self.logit_scale.data.item()
+        if np.isnan(logit_scale_val_after_clamp) or np.isinf(logit_scale_val_after_clamp):
+             logger.error(f"!!! Logit scale is NaN/Inf AFTER CLAMP: {logit_scale_val_after_clamp} !!!")
+             raise ValueError("Logit scale NaN/Inf after clamp")
+    
         # Return the exponentiated clamped value
         logit_scale_exp = self.logit_scale.exp()
+    
+        # --- Check final outputs ---
+        if torch.isnan(image_features).any(): logger.error("NaN in image_features returned by forward")
+        if torch.isnan(text_features).any(): logger.error("NaN in text_features returned by forward")
+        if torch.isnan(logit_scale_exp): logger.error("NaN in logit_scale_exp returned by forward")
 
-        # logit_scale.exp() is typically applied in the loss function
-        # Return the raw parameter here, but exponentiate for clarity in return type
+
+        if torch.isnan(image_features).any() or torch.isinf(image_features).any():
+            logger.error("!!! FINAL CHECK: NaN/Inf in image_features before return !!!")
+        
+        # Potentially raise here again or return NaNs if you want the loss func to see them
+        # raise ValueError("NaN/Inf in image_features before return")
+        if torch.isnan(text_features).any() or torch.isinf(text_features).any():
+            logger.error("!!! FINAL CHECK: NaN/Inf in text_features before return !!!")
+        
+        # raise ValueError("NaN/Inf in text_features before return")
+        if torch.isnan(logit_scale_exp).any() or torch.isinf(logit_scale_exp):
+            logger.error(f"!!! FINAL CHECK: NaN/Inf in logit_scale_exp before return: {logit_scale_exp.item()} !!!")
+        
+        # raise ValueError("NaN/Inf in logit_scale_exp before return")
+        
         return image_features, text_features, logit_scale_exp
 
     def set_gradient_checkpointing(self, enable: bool = True):

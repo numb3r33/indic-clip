@@ -7,7 +7,8 @@ __all__ = ['logger', 'MIN_IMAGE_RESOLUTION', 'MAX_IMAGE_RESOLUTION', 'MIN_ASPECT
            'MAX_TEXT_LENGTH', 'FILTERED_DATA_FILENAME', 'FILTERED_OUTPUT_PATH', 'load_raw_data', 'get_image_metadata',
            'calculate_image_hash', 'filter_data']
 
-# %% ../../nbs/02_data_preprocessing.ipynb 6
+# %% ../../nbs/02_data_preprocessing.ipynb 3
+from pathlib import Path
 try:
     import indic_clip.core
     print("Reloaded indic_clip.core")
@@ -29,8 +30,21 @@ except ModuleNotFoundError:
             print("ERROR: Still cannot find indic_clip.core. Ensure project structure is correct.")
             print("Expected: /content/Indic-Clip/indic_clip/core.py or similar in Drive")
             # raise # Stop execution if core components missing
+    else:
+        project_parent = '/workspace'
+        if Path('/workspace/indic-clip').exists():
+             project_parent = '/workspace/indic-clip'
+        if project_parent not in sys.path:
+             sys.path.insert(0, project_parent)
+             print(f"Added {project_parent} to sys.path")
+        try:
+            import indic_clip.core
+            print("Imported indic_clip.core after path adjustment.")
+        except ModuleNotFoundError:
+            print("ERROR: Still cannot find indic_clip.core. Ensure project structure is correct.")
+            print("Expected: /workspace/indic-clip/indic-clip/core.py or similar in Drive")
 
-# %% ../../nbs/02_data_preprocessing.ipynb 7
+# %% ../../nbs/02_data_preprocessing.ipynb 4
 import os
 import json
 import logging
@@ -76,7 +90,7 @@ except ModuleNotFoundError:
 setup_logging()
 logger = get_logger(__name__)
 
-# %% ../../nbs/02_data_preprocessing.ipynb 9
+# %% ../../nbs/02_data_preprocessing.ipynb 6
 # --- Filtering Thresholds ---
 MIN_IMAGE_RESOLUTION = 224 # Minimum width and height
 MAX_IMAGE_RESOLUTION = 4096 # Optional: Maximum width/height
@@ -89,7 +103,7 @@ MAX_TEXT_LENGTH = 256    # Maximum number of characters in caption
 FILTERED_DATA_FILENAME = "filtered_data.jsonl"
 FILTERED_OUTPUT_PATH = PROCESSED_DATA_PATH
 
-# %% ../../nbs/02_data_preprocessing.ipynb 11
+# %% ../../nbs/02_data_preprocessing.ipynb 8
 def load_raw_data(jsonl_path: Path) -> list:
     """Loads raw data from a JSONL file.
 
@@ -118,7 +132,7 @@ def load_raw_data(jsonl_path: Path) -> list:
         logger.error(f"Error loading raw data from {jsonl_path}: {e}")
         return [] # Return empty list on error
 
-# %% ../../nbs/02_data_preprocessing.ipynb 12
+# %% ../../nbs/02_data_preprocessing.ipynb 9
 def get_image_metadata(image_path: Path) -> dict | None:
     """Gets metadata (width, height, aspect ratio) for an image.
 
@@ -146,7 +160,7 @@ def get_image_metadata(image_path: Path) -> dict | None:
         logger.error(f"Error processing image {image_path}: {e}")
         return None
 
-# %% ../../nbs/02_data_preprocessing.ipynb 13
+# %% ../../nbs/02_data_preprocessing.ipynb 10
 def calculate_image_hash(image_path: Path) -> str | None:
     """Calculates the perceptual hash (phash) of an image.
 
@@ -171,7 +185,7 @@ def calculate_image_hash(image_path: Path) -> str | None:
         logger.error(f"Error calculating hash for image {image_path}: {e}")
         return None
 
-# %% ../../nbs/02_data_preprocessing.ipynb 15
+# %% ../../nbs/02_data_preprocessing.ipynb 12
 def filter_data(raw_data: list, base_image_path: Path) -> list:
     """Applies filtering rules to the raw data.
 

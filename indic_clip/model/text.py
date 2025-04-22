@@ -5,7 +5,9 @@
 # %% auto 0
 __all__ = ['logger', 'TextEncoder']
 
-# %% ../../nbs/06_model_text.ipynb 4
+# %% ../../nbs/06_model_text.ipynb 2
+from pathlib import Path
+
 try:
     import indic_clip.core
     print("Reloaded indic_clip.core")
@@ -27,8 +29,21 @@ except ModuleNotFoundError:
             print("ERROR: Still cannot find indic_clip.core. Ensure project structure is correct.")
             print("Expected: /content/Indic-Clip/indic_clip/core.py or similar in Drive")
             # raise # Stop execution if core components missing
+    else:
+        project_parent = '/workspace'
+        if Path('/workspace/indic-clip').exists():
+             project_parent = '/workspace/indic-clip'
+        if project_parent not in sys.path:
+             sys.path.insert(0, project_parent)
+             print(f"Added {project_parent} to sys.path")
+        try:
+            import indic_clip.core
+            print("Imported indic_clip.core after path adjustment.")
+        except ModuleNotFoundError:
+            print("ERROR: Still cannot find indic_clip.core. Ensure project structure is correct.")
+            print("Expected: /workspace/indic-clip/indic-clip/core.py or similar in Drive")
 
-# %% ../../nbs/06_model_text.ipynb 8
+# %% ../../nbs/06_model_text.ipynb 4
 import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoConfig, logging as hf_logging
@@ -63,7 +78,7 @@ logger = get_logger(__name__)
 # Reduce verbosity from Hugging Face's transformers library
 hf_logging.set_verbosity_error()
 
-# %% ../../nbs/06_model_text.ipynb 10
+# %% ../../nbs/06_model_text.ipynb 6
 class TextEncoder(Module):
     """A wrapper for Hugging Face transformer models to extract text features.
 
