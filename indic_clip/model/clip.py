@@ -5,7 +5,8 @@
 # %% auto 0
 __all__ = ['logger', 'IndicCLIP']
 
-# %% ../../nbs/07_model_clip.ipynb 4
+# %% ../../nbs/07_model_clip.ipynb 2
+from pathlib import Path
 try:
     import indic_clip.core
     print("Reloaded indic_clip.core")
@@ -28,7 +29,7 @@ except ModuleNotFoundError:
             print("Expected: /content/Indic-Clip/indic_clip/core.py or similar in Drive")
             # raise # Stop execution if core components missing
 
-# %% ../../nbs/07_model_clip.ipynb 8
+# %% ../../nbs/07_model_clip.ipynb 6
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -86,7 +87,7 @@ except ModuleNotFoundError:
 setup_logging()
 logger = get_logger(__name__)
 
-# %% ../../nbs/07_model_clip.ipynb 10
+# %% ../../nbs/07_model_clip.ipynb 8
 class IndicCLIP(Module):
     """The main IndicCLIP model, combining Vision and Text Encoders.
 

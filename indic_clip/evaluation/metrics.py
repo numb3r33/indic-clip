@@ -148,19 +148,20 @@ def calculate_zeroshot_accuracy(
         tokenized_prompts = {k: v.to(device) for k, v in tokenized_prompts.items() if isinstance(v, torch.Tensor)}
         
         # Encode text prompts
-        # Note: model.encode_text expects a dictionary like {'input_ids': ..., 'attention_mask': ...}
-        # Ensure tokenizer output format matches this expectation.
-        text_embeddings = model.encode_text(tokenized_prompts)
+        # Note: model.encode_text expects input_ids and attention_mask as separate args
+        text_embeddings = model.encode_text(tokenized_prompts['input_ids'], tokenized_prompts['attention_mask'])
         
         # Normalize text embeddings
-        text_embeddings = F.normalize(text_embeddings, p=2, dim=-1)
+        # text_embeddings = F.normalize(text_embeddings, p=2, dim=-1)
 
         # Average embeddings if multiple templates were used
         if isinstance(templates, list) and len(templates) > 1:
             num_templates = len(templates)
             text_embeddings = text_embeddings.view(num_templates, num_classes, -1).mean(dim=0)
-            text_embeddings = F.normalize(text_embeddings, p=2, dim=-1) # Re-normalize after averaging
+            # text_embeddings = F.normalize(text_embeddings, p=2, dim=-1) # Re-normalize after averaging
         
+        # Always normalize final text embeddings
+        text_embeddings = F.normalize(text_embeddings, p=2, dim=-1)
         logger.debug(f"Encoded text embeddings shape: {text_embeddings.shape}")
             
         # 2. Calculate Similarity and Predict

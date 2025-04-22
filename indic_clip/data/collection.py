@@ -6,7 +6,7 @@
 __all__ = ['logger', 'save_formatted_data', 'download_kaggle_dataset', 'unzip_file', 'load_hindi_captions',
            'get_sanskrit_data_placeholder', 'get_synthetic_data_placeholder']
 
-# %% ../../nbs/01_data_collection.ipynb 8
+# %% ../../nbs/01_data_collection.ipynb 7
 import os
 import time
 import json
@@ -57,7 +57,7 @@ except ImportError:
 setup_logging()
 logger = get_logger(__name__)
 
-# %% ../../nbs/01_data_collection.ipynb 10
+# %% ../../nbs/01_data_collection.ipynb 9
 def save_formatted_data(data: list, output_path: Path, filename: str):
     """Saves a list of data (dicts) to a JSONL file.
 
@@ -84,7 +84,7 @@ def save_formatted_data(data: list, output_path: Path, filename: str):
     except Exception as e:
         logger.error(f"An unexpected error occurred while saving data to {filepath}: {e}")
 
-# %% ../../nbs/01_data_collection.ipynb 11
+# %% ../../nbs/01_data_collection.ipynb 10
 def download_kaggle_dataset(dataset_slug: str, download_path: Path):
     """Downloads a dataset from Kaggle using the official API.
 
@@ -109,7 +109,7 @@ def download_kaggle_dataset(dataset_slug: str, download_path: Path):
         # raise e
         return False
 
-# %% ../../nbs/01_data_collection.ipynb 12
+# %% ../../nbs/01_data_collection.ipynb 11
 def unzip_file(zip_path: Path, extract_to: Path):
     """Unzips a file to a specified directory.
 
@@ -149,7 +149,7 @@ def unzip_file(zip_path: Path, extract_to: Path):
         logger.error(f"An unexpected error occurred during unzipping '{zip_path.name}': {e}")
         return False
 
-# %% ../../nbs/01_data_collection.ipynb 13
+# %% ../../nbs/01_data_collection.ipynb 12
 def load_hindi_captions(csv_path: Path) -> pd.DataFrame | None:
     """Loads Hindi captions from the specified CSV file.
 
@@ -185,7 +185,7 @@ def load_hindi_captions(csv_path: Path) -> pd.DataFrame | None:
         logger.error(f"Error loading captions from {csv_path}: {e}")
         return None
 
-# %% ../../nbs/01_data_collection.ipynb 15
+# %% ../../nbs/01_data_collection.ipynb 14
 def get_sanskrit_data_placeholder() -> list:
     """Placeholder function representing the Sanskrit data acquisition process.
 
@@ -213,7 +213,7 @@ def get_sanskrit_data_placeholder() -> list:
        logger.info(f"Loaded {len(sanskrit_data)} placeholder Sanskrit items.")
     return sanskrit_data
 
-# %% ../../nbs/01_data_collection.ipynb 17
+# %% ../../nbs/01_data_collection.ipynb 16
 def get_synthetic_data_placeholder(data_path: Path) -> list:
     """Placeholder function representing the synthetic data integration process.
 
